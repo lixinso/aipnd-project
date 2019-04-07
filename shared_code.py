@@ -1,6 +1,3 @@
-# Imports here
-#%matplotlib inline
-#%config InlineBackend.figure_format = 'retina'
 
 import matplotlib.pyplot as plt
 
@@ -26,17 +23,10 @@ from collections import OrderedDict
 import time
 
 
-
-
-#import train
-
-
-
 data_dir = 'flowers'
 train_dir = data_dir + '/train'
 valid_dir = data_dir + '/valid'
 test_dir = data_dir + '/test'
-
 
 
 # TODO: Define your transforms for the training, validation, and testing sets
@@ -82,6 +72,8 @@ hidden_units = 500
 learning_rate = 0.001
 class_to_idx = image_datasets['train'].class_to_idx
 
+checkpoint_path = 'densenet121_checkpoint.pth'
+
 
 # TODO: Build and train your network
 
@@ -123,101 +115,4 @@ def create_model(learning_rate, hidden_units, class_to_idx):
 
     return model, optimizer, criterion
 
-model, optimizer, criterion = create_model(learning_rate, hidden_units, class_to_idx)
 
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-
-
-epochs = 1
-steps = 0
-running_loss = 0
-print_every = 5
-trainloader = dataloaders["train"]
-testloader = dataloaders["test"]
-for epoch in range(epochs):
-    for inputs, labels in trainloader:
-        steps += 1
-        inputs, labels = inputs.to(device), labels.to(device)
-        optimizer.zero_grad()
-        logps = model.forward(inputs)
-        loss = criterion(logps, labels)
-        loss.backward()
-        optimizer.step()
-        
-        running_loss += loss.item()
-        
-        if steps % print_every == 0:
-            test_loss = 0
-            accuracy = 0
-            model.eval()
-            with torch.no_grad():
-                for inputs, labels in testloader:
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    logps = model.forward(inputs)
-                    batch_loss = criterion(logps, labels)
-                    
-                    test_loss += batch_loss.item()
-                    
-                    #Accuracy
-                    ps = torch.exp(logps)
-                    top_p, top_class = ps.topk(1, dim=1)
-                    equals = top_class == labels.view(*top_class.shape)
-                    accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
-                    
-                    
-                    
-            print(f"Epoch {epoch+1} / {epochs}...)"
-                  f"Train loss: {running_loss / print_every:.3f}"
-                  f"Test loss: {test_loss / len(testloader):.3f}"
-                  f"Test accuracy: {accuracy/len(testloader):.3f}"
-                 )
-            
-            
-            #Temp break to avoid running to long. Will remove it later after test
-            if accuracy/len(testloader) > 0.71:
-                break
-                
-       
-# TODO: Do validation on the test set
-
-
-accuracy = 0
-model.eval()
-
-validloader = dataloaders["valid"]
-with torch.no_grad():
-    for inputs, labels in validloader:
-        inputs, labels = inputs.to(device), labels.to(device)
-        logps = model.forward(inputs)
-
-
-        #Accuracy
-        ps = torch.exp(logps)
-        top_p, top_class = ps.topk(1, dim=1)
-        equals = top_class == labels.view(*top_class.shape)
-        accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
-
-print(f"Valid accuracy: {accuracy/len(testloader):.3f}")
-
-
-
-
-model.class_to_idx = image_datasets['train'].class_to_idx
-
-
-# Save the checkpoint 
-checkpoint_path = 'densenet121_checkpoint.pth'
-
-state = {
-    'arch': 'densenet121',
-    'learning_rate': learning_rate,
-    'hidden_units': hidden_units,
-    'epochs': epochs,
-    'state_dict': model.state_dict(),
-    'optimizer' : optimizer.state_dict(),
-    'class_to_idx' : model.class_to_idx
-}
-
-torch.save(state, checkpoint_path)
