@@ -13,15 +13,14 @@ from PIL import Image
 from collections import OrderedDict
 
 import json
-import json
-
 import time
 import os
+import sys
 
 import numpy as np
 from collections import OrderedDict
 
-import time
+
 
 import shared_code
 
@@ -95,10 +94,7 @@ def process_image(image):
     return pil_image
 
 
-img_path = "./flowers/test/101/image_07989.jpg"
-img_path = "./flowers/train/102/image_08001.jpg"
-img = Image.open(img_path)
-img
+
 
 
 def predict(image_path, model, topk=5):
@@ -127,12 +123,6 @@ def predict(image_path, model, topk=5):
     return (e.data.numpy().squeeze().tolist() for e in topk)
 
 
-
-probs, classes = predict(img_path, model_load.to(device))
-#probs, classes = predict(img_path, model.to(device))
-print(probs)
-print(classes)
-
 # TODO: Display an image along with the top 5 classes
 
 def view_classify(image, ps, classes):
@@ -158,12 +148,22 @@ def view_classify(image, ps, classes):
     ax2.set_yticklabels(classes)
     fig.subplots_adjust(wspace=0.6)
     
+if __name__ == "__main__":
+
+    img_path = "./flowers/train/102/image_08001.jpg"
+
+    if len(sys.argv) >= 2:
+        img_path = sys.argv[1]
     
-class_names = shared_code.image_datasets['train'].classes
+    img = Image.open(img_path)
+    img
 
-flower_names = [shared_code.cat_to_name[class_names[e]] for e in classes]
+    probs, classes = predict(img_path, model_load.to(device))
+    print(probs)
+    print(classes)
 
-print(flower_names)
+    class_names = shared_code.image_datasets['train'].classes
+    flower_names = [shared_code.cat_to_name[class_names[e]] for e in classes]
+    print(flower_names)
 
-#view_classify(img, probs, flower_names)
-    
+    #view_classify(img, probs, flower_names)
