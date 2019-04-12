@@ -222,9 +222,9 @@ for epoch in range(epochs):
 accuracy = 0
 model.eval()
 
-validloader = dataloaders["valid"]
+testloader = dataloaders["test"]
 with torch.no_grad():
-    for inputs, labels in validloader:
+    for inputs, labels in testloader:
         inputs, labels = inputs.to(device), labels.to(device)
         logps = model.forward(inputs)
 
