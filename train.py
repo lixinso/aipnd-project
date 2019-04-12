@@ -2,6 +2,9 @@
 #%matplotlib inline
 #%config InlineBackend.figure_format = 'retina'
 
+import argparse
+
+
 import matplotlib.pyplot as plt
 
 import torch
@@ -153,90 +156,86 @@ def create_model(model_type, learning_rate, hidden_units, class_to_idx):
 
     return model, optimizer, criterion
 
-model, optimizer, criterion = create_model(model_type,learning_rate, hidden_units, class_to_idx)
+
+
+def train_func(model, dataloaders, optimizer, device):
+
+    
+    model.to(device)
+
+
+    epochs = 1
+    steps = 0
+    running_loss = 0
+    print_every = 5
+    trainloader = dataloaders["train"]
+    validloader = dataloaders["valid"]
+    for epoch in range(epochs):
+        for inputs, labels in trainloader:
+            steps += 1
+            inputs, labels = inputs.to(device), labels.to(device)
+            optimizer.zero_grad()
+            logps = model.forward(inputs)
+            loss = criterion(logps, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+            if steps % print_every == 0:
+                test_loss = 0
+                accuracy = 0
+                model.eval()
+                with torch.no_grad():
+                    for inputs, labels in validloader:
+                        inputs, labels = inputs.to(device), labels.to(device)
+                        logps = model.forward(inputs)
+                        batch_loss = criterion(logps, labels)
+
+                        test_loss += batch_loss.item()
+
+                        #Accuracy
+                        ps = torch.exp(logps)
+                        top_p, top_class = ps.topk(1, dim=1)
+                        equals = top_class == labels.view(*top_class.shape)
+                        accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
 
 
 
+                print(f"Epoch {epoch+1} / {epochs}...)"
+                      f"Train loss: {running_loss / print_every:.3f}"
+                      f"Test loss: {test_loss / len(validloader):.3f}"
+                      f"Test accuracy: {accuracy/len(validloader):.3f}"
+                     )
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
 
-
-
-epochs = 1
-steps = 0
-running_loss = 0
-print_every = 5
-trainloader = dataloaders["train"]
-validloader = dataloaders["valid"]
-for epoch in range(epochs):
-    for inputs, labels in trainloader:
-        steps += 1
-        inputs, labels = inputs.to(device), labels.to(device)
-        optimizer.zero_grad()
-        logps = model.forward(inputs)
-        loss = criterion(logps, labels)
-        loss.backward()
-        optimizer.step()
-        
-        running_loss += loss.item()
-        
-        if steps % print_every == 0:
-            test_loss = 0
-            accuracy = 0
-            model.eval()
-            with torch.no_grad():
-                for inputs, labels in validloader:
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    logps = model.forward(inputs)
-                    batch_loss = criterion(logps, labels)
-                    
-                    test_loss += batch_loss.item()
-                    
-                    #Accuracy
-                    ps = torch.exp(logps)
-                    top_p, top_class = ps.topk(1, dim=1)
-                    equals = top_class == labels.view(*top_class.shape)
-                    accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
-                    
-                    
-                    
-            print(f"Epoch {epoch+1} / {epochs}...)"
-                  f"Train loss: {running_loss / print_every:.3f}"
-                  f"Test loss: {test_loss / len(validloader):.3f}"
-                  f"Test accuracy: {accuracy/len(validloader):.3f}"
-                 )
-            
-            
-            #Temp break to avoid running to long. Will remove it later after test
-            if accuracy/len(validloader) > 0.71:
-                break
-
+                #Temp break to avoid running to long. Will remove it later after test
+                if accuracy/len(validloader) > 0.71:
+                    break
 
 
 
        
 # TODO: Do validation on the test set
+def validation_test(model, dataloaders, device):
+
+    accuracy = 0
+    model.eval()
+
+    testloader = dataloaders["test"]
+    with torch.no_grad():
+        for inputs, labels in testloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            logps = model.forward(inputs)
 
 
-accuracy = 0
-model.eval()
+            #Accuracy
+            ps = torch.exp(logps)
+            top_p, top_class = ps.topk(1, dim=1)
+            equals = top_class == labels.view(*top_class.shape)
+            accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
 
-testloader = dataloaders["test"]
-with torch.no_grad():
-    for inputs, labels in testloader:
-        inputs, labels = inputs.to(device), labels.to(device)
-        logps = model.forward(inputs)
-
-
-        #Accuracy
-        ps = torch.exp(logps)
-        top_p, top_class = ps.topk(1, dim=1)
-        equals = top_class == labels.view(*top_class.shape)
-        accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
-
-print(f"Valid accuracy: {accuracy/len(testloader):.3f}")
-
+    print(f"Valid accuracy: {accuracy/len(testloader):.3f}")
 
 
 
@@ -275,4 +274,42 @@ def save_checkpoint(model_type):
 
     torch.save(state, checkpoint_path)
     
-save_checkpoint(model_type)
+
+
+if __name__ == "__main__":
+
+    
+    parser = argparse.ArgumentParser(prog='PROG')
+    parser.add_argument('--img_path', default='./flowers/train/102/image_08001.jpg', type=str)
+    parser.add_argument('--device', default='gpu', type=str) # gpu|cpu
+    parser.add_argument('--model_type', default='densenet', type=str) # densenet | vgg16 
+    parser.add_argument('--checkpoint_path', default='densenet121_checkpoint.pth', type=str)  #densenet121_checkpoint.pth | vgg16_checkpoint.pth
+    parser.add_argument('--top_k', default=5, type=int)
+    parser.add_argument('--category_names_path', default='cat_to_name.json', type=str)
+    parser.add_argument('--learning_rate', default= 0.001, type=float)
+    parser.add_argument('--hidden_units', default=500, type=int)
+    parser.add_argument('--training_epochs', default=1, type=int)
+    
+    args = parser.parse_args()
+    
+    img_path             = args.img_path
+    device               = args.device
+    model_type           = args.model_type
+    checkpoint_path      = args.checkpoint_path
+    top_k                = args.top_k
+    category_names_path  = args.category_names_path
+    learning_rate        = args.learning_rate
+    hidden_units         = args.hidden_units
+    training_epochs      = args.training_epochs
+    
+    
+    model, optimizer, criterion = create_model(model_type,learning_rate, hidden_units, class_to_idx)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    train_func(model, dataloaders, optimizer, device)
+    
+    validation_test(model, dataloaders, device)
+    save_checkpoint(model_type)
+
+
