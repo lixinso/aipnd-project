@@ -12,16 +12,11 @@ from PIL import Image
 from collections import OrderedDict
 
 import json
-import json
-
 import time
 import os
 
 import numpy as np
 from collections import OrderedDict
-
-import time
-
 
 data_dir = 'flowers'
 train_dir = data_dir + '/train'
@@ -72,10 +67,11 @@ hidden_units = 500
 learning_rate = 0.001
 class_to_idx = image_datasets['train'].class_to_idx
 
-checkpoint_path = 'densenet121_checkpoint.pth'
+#checkpoint_path = 'densenet121_checkpoint.pth'
 
 
 # TODO: Build and train your network
+
 
 def get_densenet_model(hidden_units):
     model = models.densenet121(pretrained=True)
@@ -99,12 +95,49 @@ def get_densenet_model(hidden_units):
 
     return model
 
-def create_model(learning_rate, hidden_units, class_to_idx):
+
+def get_vgg16_model():
+    model = models.vgg16(pretrained=True)
+    
+    input_size = model.classifier[0].in_features
+    output_size = 102
+    hidden_size = [(input_size // 8), (input_size // 32)]
+    
+    for param in model.parameters():
+        param.requires_grad = False
+        
+    # Create nn.Module with Sequential using an OrderedDict
+    # See https://pytorch.org/docs/stable/nn.html#torch.nn.Sequential
+    classifier = nn.Sequential(OrderedDict([
+        ('fc1', nn.Linear(input_size, hidden_size[0])),
+        ('relu1', nn.ReLU()),
+        ('dropout', nn.Dropout(p=0.15)),
+        ('fc2', nn.Linear(hidden_size[0], hidden_size[1])),
+        ('relu2', nn.ReLU()),
+        ('dropout', nn.Dropout(p=0.15)),
+        ('output', nn.Linear(hidden_size[1], output_size)),
+        ('softmax', nn.LogSoftmax(dim=1))
+    ]))
+    
+    model.classifier = classifier
+    
+    return model
+        
+
+
+# TODO: Build and train your network
+
+
+def create_model(model_type, learning_rate, hidden_units, class_to_idx):
     ''' Create a deep learning model from existing PyTorch model.
     '''
     # Load pre-trained model
-    model = get_densenet_model(hidden_units)
-
+    
+    if model_type == "densenet":
+        model = get_densenet_model(hidden_units)
+    elif model_type == "vgg16":
+        model = get_vgg16_model()
+        
     # Set training parameters
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=learning_rate)
@@ -114,5 +147,7 @@ def create_model(learning_rate, hidden_units, class_to_idx):
     model.class_to_idx = class_to_idx
 
     return model, optimizer, criterion
+
+
 
 

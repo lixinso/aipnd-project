@@ -37,7 +37,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def load_checkpoint(model_type):
     
     # Get class to index mapping
-    class_to_idx = image_datasets['train'].class_to_idx
+    class_to_idx = shared_code.image_datasets['train'].class_to_idx
 
     if model_type == "densenet":
         
@@ -46,9 +46,10 @@ def load_checkpoint(model_type):
 
         learning_rate = state['learning_rate']
         class_to_idx = state['class_to_idx']
+        hidden_units = state['hidden_units']
 
         # Load pretrained model
-        model_load, optimizer, criterion = create_model(model_type, learning_rate, hidden_units, class_to_idx)
+        model_load, optimizer, criterion = shared_code.create_model(model_type, learning_rate, hidden_units, class_to_idx)
 
         # Load checkpoint state into model
         model_load.load_state_dict(state['state_dict'])
@@ -72,7 +73,7 @@ def load_checkpoint(model_type):
         print("class_to_idx", class_to_idx)
         
         # Load pretrained model
-        model_load, optimizer, criterion = create_model(model_type, learning_rate, -1, class_to_idx)
+        model_load, optimizer, criterion = shared_code.create_model(model_type, learning_rate, -1, class_to_idx)
 
         # Load checkpoint state into model
         model_load.load_state_dict(state['state_dict'])
@@ -198,8 +199,16 @@ if __name__ == "__main__":
     print(probs)
     print(classes)
 
-    class_names = shared_code.image_datasets['train'].classes
-    flower_names = [shared_code.cat_to_name[class_names[e]] for e in classes]
+    #class_names = shared_code.image_datasets['train'].classes
+    #flower_names = [shared_code.cat_to_name[class_names[e]] for e in classes]
+    #print(flower_names)
+    
+    # Reverse the dict
+    idx_to_class = {val: key for key, val in model_load.class_to_idx.items()}
+    # Get the correct indices
+    top_classes = [idx_to_class[each] for each in classes]
+    flower_names = [shared_code.cat_to_name[e] for e in top_classes]
     print(flower_names)
+    
 
     #view_classify(img, probs, flower_names)
