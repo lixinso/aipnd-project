@@ -20,9 +20,9 @@ import sys
 import numpy as np
 from collections import OrderedDict
 
-
-
 import shared_code
+
+model_type="densenet" #densenet,vgg16 
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,28 +32,63 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 
-# Get class to index mapping
-class_to_idx = shared_code.image_datasets['train'].class_to_idx
+# TODO: Write a function that loads a checkpoint and rebuilds the model
 
-state = torch.load(shared_code.checkpoint_path)
+def load_checkpoint(model_type):
+    
+    # Get class to index mapping
+    class_to_idx = image_datasets['train'].class_to_idx
 
-learning_rate = state['learning_rate']
-class_to_idx = state['class_to_idx']
-hidden_units  = state['hidden_units']
+    if model_type == "densenet":
+        
+        checkpoint_path = 'densenet121_checkpoint.pth'
+        state = torch.load(checkpoint_path)
 
+        learning_rate = state['learning_rate']
+        class_to_idx = state['class_to_idx']
 
-# Load pretrained model
-model_load, optimizer, criterion = shared_code.create_model(learning_rate, hidden_units, class_to_idx)
+        # Load pretrained model
+        model_load, optimizer, criterion = create_model(model_type, learning_rate, hidden_units, class_to_idx)
 
-# Load checkpoint state into model
-model_load.load_state_dict(state['state_dict'])
-optimizer.load_state_dict(state['optimizer'])
+        # Load checkpoint state into model
+        model_load.load_state_dict(state['state_dict'])
+        optimizer.load_state_dict(state['optimizer'])
 
-print("Loaded '{}' (arch={}, hidden_units={}, epochs={})".format(
-    shared_code.checkpoint_path, 
-    state['arch'], 
-    state['hidden_units'], 
-    state['epochs']))
+        print("Loaded '{}' (arch={}, hidden_units={}, epochs={})".format(
+            checkpoint_path, 
+            state['arch'], 
+            state['hidden_units'], 
+            state['epochs']))
+
+        return [model_load,optimizer]
+
+    elif model_type == "vgg16":
+        checkpoint_path = "vgg16_checkpoint.pth"
+        state = torch.load(checkpoint_path)
+
+        learning_rate = state['learning_rate']
+        class_to_idx = state['class_to_idx']
+
+        print("class_to_idx", class_to_idx)
+        
+        # Load pretrained model
+        model_load, optimizer, criterion = create_model(model_type, learning_rate, -1, class_to_idx)
+
+        # Load checkpoint state into model
+        model_load.load_state_dict(state['state_dict'])
+        optimizer.load_state_dict(state['optimizer'])
+
+        #print("Loaded '{}' (arch={}, hidden_units={}, epochs={})".format(
+        print("Loaded '{}' (arch={}, epochs={})".format(
+            checkpoint_path, 
+            state['arch'], 
+            #state['hidden_units'], 
+            state['epochs']))
+
+        return [model_load,optimizer]        
+    
+[model_load,optimizer] = load_checkpoint(model_type)
+
 
 
 
@@ -92,6 +127,7 @@ def process_image(image):
     pil_image = in_transforms(pil_image)
     
     return pil_image
+    
 
 
 
