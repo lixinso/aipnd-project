@@ -1,3 +1,4 @@
+import argparse
 
 
 import matplotlib.pyplot as plt
@@ -21,6 +22,9 @@ import numpy as np
 from collections import OrderedDict
 
 import shared_code
+
+
+
 
 model_type="densenet" #densenet,vgg16 
 
@@ -186,11 +190,32 @@ def view_classify(image, ps, classes):
     fig.subplots_adjust(wspace=0.6)
     
 if __name__ == "__main__":
+    
+    
+    parser = argparse.ArgumentParser(prog='PROG')
+    parser.add_argument('--img_path', default='./flowers/train/102/image_08001.jpg', type=str)
+    parser.add_argument('--device', default='gpu', type=str) # gpu|cpu
+    parser.add_argument('--model_type', default='densenet', type=str) # densenet | vgg16 
+    parser.add_argument('--checkpoint_path', default='densenet121_checkpoint.pth', type=str)  #densenet121_checkpoint.pth | vgg16_checkpoint.pth
+    parser.add_argument('--top_k', default=5, type=int)
+    parser.add_argument('--category_names_path', default='cat_to_name.json', type=str)
 
+    args = parser.parse_args()
+    
+    img_path             = args.img_path
+    device               = args.device
+    model_type           = args.model_type
+    checkpoint_path      = args.checkpoint_path
+    top_k                = args.top_k
+    category_names_path  = args.category_names_path
+    
+    
     img_path = "./flowers/train/102/image_08001.jpg"
+    
 
-    if len(sys.argv) >= 2:
-        img_path = sys.argv[1]
+
+    #if len(sys.argv) >= 2:
+    #    img_path = sys.argv[1]
     
     img = Image.open(img_path)
     img
