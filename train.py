@@ -146,6 +146,8 @@ def create_model(model_type, learning_rate, hidden_units, class_to_idx):
     elif model_type == "vgg16":
         model = get_vgg16_model()
         
+    print("model_type", model_type)
+        
     # Set training parameters
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=learning_rate)
@@ -240,7 +242,7 @@ def validation_test(model, dataloaders, device):
 
 
 
-def save_checkpoint(model_type):
+def save_checkpoint(model_type, model, optimizer, learning_rate, hidden_units, epochs  ):
 
     model.class_to_idx = image_datasets['train'].class_to_idx
 
@@ -280,19 +282,17 @@ if __name__ == "__main__":
 
     
     parser = argparse.ArgumentParser(prog='PROG')
-    parser.add_argument('--img_path', default='./flowers/train/102/image_08001.jpg', type=str)
-    parser.add_argument('--device', default='gpu', type=str) # gpu|cpu
+    parser.add_argument('--device', default='cuda', type=str) # cuda|cpu
     parser.add_argument('--model_type', default='densenet', type=str) # densenet | vgg16 
     parser.add_argument('--checkpoint_path', default='densenet121_checkpoint.pth', type=str)  #densenet121_checkpoint.pth | vgg16_checkpoint.pth
     parser.add_argument('--top_k', default=5, type=int)
     parser.add_argument('--category_names_path', default='cat_to_name.json', type=str)
     parser.add_argument('--learning_rate', default= 0.001, type=float)
     parser.add_argument('--hidden_units', default=500, type=int)
-    parser.add_argument('--training_epochs', default=1, type=int)
+    parser.add_argument('--epochs', default=1, type=int)
     
     args = parser.parse_args()
     
-    img_path             = args.img_path
     device               = args.device
     model_type           = args.model_type
     checkpoint_path      = args.checkpoint_path
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     category_names_path  = args.category_names_path
     learning_rate        = args.learning_rate
     hidden_units         = args.hidden_units
-    training_epochs      = args.training_epochs
+    epochs      = args.epochs
     
     
     model, optimizer, criterion = create_model(model_type,learning_rate, hidden_units, class_to_idx)
@@ -310,6 +310,6 @@ if __name__ == "__main__":
     train_func(model, dataloaders, optimizer, device)
     
     validation_test(model, dataloaders, device)
-    save_checkpoint(model_type)
+    save_checkpoint(model_type, model, optimizer, learning_rate, hidden_units, epochs  )
 
 
