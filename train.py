@@ -26,7 +26,7 @@ from collections import OrderedDict
 
 #import train
 
-model_type="densenet" #densenet,vgg16 
+#model_type="densenet" #densenet,vgg16 
 
 
 data_dir = 'flowers'
@@ -75,8 +75,8 @@ print(len(cat_to_name))
 print(json.dumps(cat_to_name,indent=4)[:300])
 
 #Params
-hidden_units = 500
-learning_rate = 0.001
+#hidden_units = 500
+#learning_rate = 0.001
 class_to_idx = image_datasets['train'].class_to_idx
 
 
@@ -160,13 +160,13 @@ def create_model(model_type, learning_rate, hidden_units, class_to_idx):
 
 
 
-def train_func(model, dataloaders, optimizer, device):
+def train_func(model, dataloaders, optimizer, device, epochs):
 
     
     model.to(device)
 
 
-    epochs = 1
+    #epochs = 1
     steps = 0
     running_loss = 0
     print_every = 5
@@ -242,14 +242,14 @@ def validation_test(model, dataloaders, device):
 
 
 
-def save_checkpoint(model_type, model, optimizer, learning_rate, hidden_units, epochs  ):
+def save_checkpoint(model_type, model, optimizer, learning_rate, hidden_units, epochs, checkpoint_path  ):
 
     model.class_to_idx = image_datasets['train'].class_to_idx
 
     # Save the checkpoint 
     
     if model_type == "densenet":
-        checkpoint_path = 'densenet121_checkpoint.pth'
+        #checkpoint_path = 'densenet121_checkpoint.pth'
         state = {
             'arch': 'densenet121',
             'learning_rate': learning_rate,
@@ -261,7 +261,7 @@ def save_checkpoint(model_type, model, optimizer, learning_rate, hidden_units, e
         }
 
     elif model_type == "vgg16":
-        checkpoint_path = "vgg16_checkpoint.pth"
+        #checkpoint_path = "vgg16_checkpoint.pth"
         
         state = {
             "arch": "vgg16",
@@ -300,16 +300,16 @@ if __name__ == "__main__":
     category_names_path  = args.category_names_path
     learning_rate        = args.learning_rate
     hidden_units         = args.hidden_units
-    epochs      = args.epochs
+    epochs               = args.epochs
     
     
     model, optimizer, criterion = create_model(model_type,learning_rate, hidden_units, class_to_idx)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    train_func(model, dataloaders, optimizer, device)
+    train_func(model, dataloaders, optimizer, device, epochs)
     
     validation_test(model, dataloaders, device)
-    save_checkpoint(model_type, model, optimizer, learning_rate, hidden_units, epochs  )
+    save_checkpoint(model_type, model, optimizer, learning_rate, hidden_units, epochs, checkpoint_path  )
 
 

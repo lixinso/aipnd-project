@@ -26,26 +26,26 @@ import shared_code
 
 
 
-model_type="densenet" #densenet,vgg16 
+#model_type="densenet" #densenet,vgg16 
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-# TODO: Write a function that loads a checkpoint and rebuilds the model
-
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # TODO: Write a function that loads a checkpoint and rebuilds the model
 
-def load_checkpoint(model_type):
+
+
+# TODO: Write a function that loads a checkpoint and rebuilds the model
+
+def load_checkpoint(model_type, checkpoint_path):
     
     # Get class to index mapping
     class_to_idx = shared_code.image_datasets['train'].class_to_idx
 
     if model_type == "densenet":
         
-        checkpoint_path = 'densenet121_checkpoint.pth'
+        #checkpoint_path = 'densenet121_checkpoint.pth'
         state = torch.load(checkpoint_path)
 
         learning_rate = state['learning_rate']
@@ -68,7 +68,7 @@ def load_checkpoint(model_type):
         return [model_load,optimizer]
 
     elif model_type == "vgg16":
-        checkpoint_path = "vgg16_checkpoint.pth"
+        #checkpoint_path = "vgg16_checkpoint.pth"
         state = torch.load(checkpoint_path)
 
         learning_rate = state['learning_rate']
@@ -92,7 +92,6 @@ def load_checkpoint(model_type):
 
         return [model_load,optimizer]        
     
-[model_load,optimizer] = load_checkpoint(model_type)
 
 
 
@@ -138,7 +137,7 @@ def process_image(image):
 
 
 
-def predict(image_path, model, topk=5):
+def predict(image_path, model, topk=5, device="cuda"):
     ''' Predict the class (or classes) of an image using a trained deep learning model.
     '''
     
@@ -194,7 +193,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(prog='PROG')
     parser.add_argument('--img_path', default='./flowers/train/102/image_08001.jpg', type=str)
-    parser.add_argument('--device', default='gpu', type=str) # gpu|cpu
+    parser.add_argument('--device', default='cuda', type=str) # cuda|cpu
     parser.add_argument('--model_type', default='densenet', type=str) # densenet | vgg16 
     parser.add_argument('--checkpoint_path', default='densenet121_checkpoint.pth', type=str)  #densenet121_checkpoint.pth | vgg16_checkpoint.pth
     parser.add_argument('--top_k', default=5, type=int)
@@ -210,17 +209,14 @@ if __name__ == "__main__":
     category_names_path  = args.category_names_path
     
     
-    img_path = "./flowers/train/102/image_08001.jpg"
+    #img_path = "./flowers/train/102/image_08001.jpg"
     
-
-
-    #if len(sys.argv) >= 2:
-    #    img_path = sys.argv[1]
+    [model_load,optimizer] = load_checkpoint(model_type, checkpoint_path)
     
     img = Image.open(img_path)
     img
 
-    probs, classes = predict(img_path, model_load.to(device))
+    probs, classes = predict(img_path, model_load.to(device), top_k, device)
     print(probs)
     print(classes)
 
