@@ -13,3 +13,6 @@ python predict.py --img_path ./flowers/train/102/image_08001.jpg --device cuda -
 docker build -t aipnd-project:v1 .
 docker run -p 8888:8888   -v "$PWD":/myworkdir   --rm -it aipnd-project:v1
 
+
+TODO: clean code; add more models
+
